@@ -69,12 +69,26 @@ sub tg_get_updates {
                             chat_id => $m->{message}{chat}{id}
                         };
                     } else {
-                        # say "No photo: " . encode_json($m);
+                        tg_reply_with_usage($m->{message}{chat}{id});
                     }
                 }
             } else {
                 say "getUpdates failed: " . Mojo::Util::dumper( $tx->error );
             }
+        }
+    );
+}
+
+sub tg_reply_with_usage {
+    my ($chat_id) = @_;
+    return unless $CONTEXT->{tg_bot};
+    my $usage = "Send me nice photo you took, I'll send you a nice one back. \x{1F638}";
+    $CONTEXT->{tg_bot}->api_request(
+        'sendMessage',
+        { chat_id => $chat_id, text => $usage },
+        sub {
+            my ($ua, $tx) = @_;
+            say "Replied usage => $chat_id";
         }
     );
 }

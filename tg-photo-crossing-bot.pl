@@ -3,8 +3,6 @@ use v5.18;
 use strict;
 use warnings;
 
-use Data::Printer;
-
 use Path::Tiny qw(path);
 use List::Util qw(max);
 use List::UtilsBy qw(max_by);
@@ -107,39 +105,6 @@ sub tg_reply_with_a_photo {
     );
 }
 
-sub download_and_store_file {
-    my ($tgbot, $token, $download_dir);
-    
-    return unless ($token = $CONTEXT->{tg_token}) && ($tgbot = $CONTEXT->{tg_bot}) && ($download_dir = $CONTEXT->{download_dir}) && @{$CONTEXT->{file_queue}};
-
-
-    my $x = pop(@{$CONTEXT->{file_queue}});
-    my $file_id = $x->{file_id};
-    my $chat_id = $x->{chat_id};
-
-    db_store_photo($chat_id, $file_id);
-
-    $tgbot->api_request(
-        'getFile',
-        { file_id => $file_id },
-        sub {
-            my ($ua, $tx) = @_;
-            my $r = $tx->res->json;
-            if ($r->{ok}) {
-                my $file_path = $r->{result}{file_path};
-                my $file_url = "https://api.telegram.org/file/bot${token}/${file_path}";
-                my ($file_ext) = ($file_path) =~ m{ \. ([^\.]+) \z}x;
-
-                my $shard = 0;
-                my $download_path = path("${download_dir}/${shard}/${file_id}.${file_ext}");
-                $download_path->parent()->mkpath();
-
-                Mojo::UserAgent->new->max_redirects(5)->get($file_url)->res->content->asset->move_to( "". $download_path );
-            }
-        }
-    );
-}
-
 sub tg_init {
     my ($token) = @_;
     $CONTEXT->{tg_token} = $token;
@@ -171,7 +136,6 @@ sub MAIN {
     my $tmpdir = $ENV{TMPDIR} // "/tmp";
     $CONTEXT->{download_dir} = $args{download_dir} // "${tmpdir}/tg-photo-crossing-bot";
     $CONTEXT->{tg_bot} = tg_init( $args{telegram_token} );
-    Mojo::IOLoop->recurring( 1 => \&download_and_store_file );
 
     Mojo::IOLoop->start;
 }

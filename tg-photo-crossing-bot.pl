@@ -23,7 +23,7 @@ my $CONTEXT = {
 };
 
 sub dbh_rw {
-    return $CONTEXT->{dbh} ||= DBI->connect("dbi:SQLite:dbname=". $CONTEXT->{db}, "", "");
+    return DBI->connect("dbi:SQLite:dbname=". $CONTEXT->{db}, "", "");
 }
 
 sub db_store_photo {
@@ -34,8 +34,7 @@ sub db_store_photo {
 
 sub db_get_photo {
     my ($chat_id) = @_;
-    my $dbh = dbh_rw();
-    my ($count) = $dbh->selectrow_array("SELECT count(*) FROM photos");
+    my ($count) = dbh_rw()->selectrow_array("SELECT count(*) FROM photos");
     my $o = int rand($count);
     my ($file_id) = dbh_rw()->selectrow_array("SELECT `file_id` FROM photos LIMIT 1 OFFSET $o");
     return $file_id;

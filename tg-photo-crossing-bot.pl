@@ -17,8 +17,6 @@ use DBD::SQLite;
 
 use WWW::Telegram::BotAPI;
 my $CONTEXT = {
-    file_queue => [],
-    known_photos => [],
     db => "",
 };
 
@@ -28,7 +26,6 @@ sub dbh_rw {
 
 sub db_store_photo {
     my ($chat_id, $file_id) = @_;
-    push @{$CONTEXT->{known_photos}}, $file_id;
     dbh_rw()->do("INSERT INTO photos (`chat_id`, `file_id`) VALUES (?,?)", {}, $chat_id, $file_id);
 }
 
@@ -58,13 +55,11 @@ sub tg_get_updates {
                     $max_update_id = max($max_update_id, $m->{update_id});
                     if (exists $m->{message}{photo}) {
                         my $photo = max_by { $_->{width} } @{ $m->{message}{photo} };
+                        my $chat_id = $m->{message}{chat}{id};
+                        my $file_id = $photo->{file_id};
 
-                        tg_reply_with_a_photo($m->{message}{chat}{id});
-
-                        push @{ $CONTEXT->{file_queue} }, {
-                            file_id => $photo->{file_id},
-                            chat_id => $m->{message}{chat}{id}
-                        };
+                        db_store_photo($chat_id, $file_id);
+                        tg_reply_with_a_photo($chat_id);
                     } else {
                         tg_reply_with_usage($m->{message}{chat}{id});
                     }

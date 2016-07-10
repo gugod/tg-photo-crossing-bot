@@ -31,9 +31,17 @@ sub db_store_photo {
 
 sub db_get_photo {
     my ($chat_id) = @_;
-    my ($count) = dbh_rw()->selectrow_array("SELECT count(*) FROM photos");
-    my $o = int rand($count);
-    my ($file_id) = dbh_rw()->selectrow_array("SELECT `file_id` FROM photos LIMIT 1 OFFSET $o");
+    my $dbh = dbh_rw();
+    my ($count_others) = $dbh->selectrow_array("SELECT count(*) FROM photos WHERE chat_id <> ?", {}, $chat_id);
+
+    my $file_id;
+    my $seen = 1;
+    while($seen) {
+        my $o = int rand($count_others);
+        ($file_id) = $dbh->selectrow_array("SELECT `file_id` FROM photos WHERE chat_id <> ? LIMIT 1 OFFSET $o", {}, $chat_id);
+        ($seen) = $dbh->selectrow_array("SELECT 1 FROM sent_photos WHERE chat_id = ? AND file_id = ?", {}, $chat_id, $file_id);
+    }
+
     return $file_id;
 }
 

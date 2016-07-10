@@ -37,6 +37,11 @@ sub db_get_photo {
     return $file_id;
 }
 
+sub db_store_sent_photo {
+    my ($chat_id, $file_id) = @_;
+    dbh_rw()->do("INSERT INTO sent_photos (`chat_id`, `file_id`) VALUES (?,?)", {}, $chat_id, $file_id);
+}
+
 sub tg_get_updates {
     return unless $CONTEXT->{tg_bot};
     state $max_update_id = 0;
@@ -95,6 +100,8 @@ sub tg_reply_with_a_photo {
         sub {
             my ($ua, $tx) = @_;
             say "Replied => $chat_id";
+
+            db_store_sent_photo($chat_id, $photo);
         }
     );
 }
@@ -147,4 +154,7 @@ __END__
 
 CREATE TABLE photos(`chat_id` UNSIGNED INTEGER, `file_id` UNSIGNED INTEGER);
 CREATE UNIQUE INDEX photos_chat_file ON photos (`chat_id`, `file_id`);
+
+CREATE TABLE sent_photos(`chat_id` UNSIGNED INTEGER, `file_id` UNSIGNED INTEGER);
+CREATE UNIQUE INDEX sent_photos_chat_file ON sent_photos (`chat_id`, `file_id`);
 

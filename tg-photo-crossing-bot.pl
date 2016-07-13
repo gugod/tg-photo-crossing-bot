@@ -3,11 +3,9 @@ use v5.18;
 use strict;
 use warnings;
 
-use Path::Tiny qw(path);
 use List::Util qw(max);
 use List::UtilsBy qw(max_by);
 use Getopt::Long qw(GetOptions);
-use Mojo::JSON qw(encode_json decode_json);
 use Mojo::IOLoop;
 use Mojo::Util;
 use Mojo::UserAgent;

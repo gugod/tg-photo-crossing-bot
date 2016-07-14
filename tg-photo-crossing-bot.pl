@@ -105,17 +105,21 @@ sub db_store_sent_photo {
 }
 
 sub tg_get_updates {
-    return unless $CONTEXT->{tg_bot};
     state $max_update_id = 0;
+    state $in_progress = 0;
+
+    return unless $CONTEXT->{tg_bot};
+    return if $in_progress;
 
     say "Getting tg updates...";
+    $in_progress = 1;
     my $tgbot = $CONTEXT->{tg_bot};
     $tgbot->api_request(
         'getUpdates',
         { timeout => 15, $max_update_id ? (offset => 1+$max_update_id) : () },
         sub {
             my ($ua, $tx) = @_;
-            say "Cool";
+            $in_progress = 0;
             if ($tx->success) {
                 my $res = $tx->res->json;
                 return unless $res->{ok} && @{$res->{result}};
@@ -212,7 +216,7 @@ sub tg_init {
             my $r = $tx->res->json;
             Mojo::Util::dumper(['getMe', $r]);
 	    tg_get_updates();
-            Mojo::IOLoop->recurring( 5, \&tg_get_updates );
+            Mojo::IOLoop->recurring( 20, \&tg_get_updates );
         } else {
             Mojo::Util::dumper(['getMe Failed.', $tx->res->body]);
             Mojo::IOLoop->timer( 5 => sub { $tgbot->api_request(getMe => $get_me_cb) });

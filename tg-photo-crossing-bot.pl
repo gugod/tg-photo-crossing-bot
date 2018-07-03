@@ -220,7 +220,7 @@ sub tg_init {
         } else {
             Mojo::Util::dumper(['getMe Failed.', $tx->res->body]);
             Mojo::IOLoop->timer( 5 => sub { $tgbot->api_request(getMe => $get_me_cb) });
-        } 
+        }
     };
 
     Mojo::IOLoop->timer( 15 => sub { $tgbot->api_request(getMe => $get_me_cb) });
